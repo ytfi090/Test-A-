@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocab Master: Custom Study Suite</title>
+    <title>Vocab Master: Dual Recall</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -13,247 +13,211 @@
             --bg: #f4f7f6;
         }
 
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; text-align: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; text-align: center; overflow-x: hidden; }
 
-        /* --- Navigation Bar --- */
+        /* Shake Animation */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        .shake-screen { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
         .nav-header {
-            background: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: white; padding: 15px 30px; display: flex; 
+            justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .home-btn {
-            text-decoration: none;
-            color: var(--primary);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 2px solid var(--primary);
-            padding: 8px 15px;
-            border-radius: 8px;
-            transition: 0.3s;
+            text-decoration: none; color: var(--primary); font-weight: bold;
+            border: 2px solid var(--primary); padding: 8px 15px; border-radius: 8px;
         }
 
-        .home-btn:hover {
-            background: var(--primary);
-            color: white;
+        .mode-indicator {
+            font-size: 1.8rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 2px; margin: 20px 0; color: var(--accent);
         }
 
-        /* --- Range Selector --- */
-        .range-picker {
-            background: #fff;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid #eee;
-            flex-wrap: wrap;
-        }
-
-        input[type="number"] { width: 60px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; }
-        .btn-set { background: var(--accent); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-
-        /* --- Progress Bar --- */
-        .progress-container { width: 100%; height: 8px; background: #dfe6e9; }
-        .progress-fill { width: 0%; height: 100%; background: var(--success); transition: width 0.5s ease; }
-
-        /* --- Challenge Arena --- */
         .arena {
-            max-width: 650px;
-            margin: 40px auto;
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 600px; margin: 20px auto; background: white;
+            padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        .def-text { font-size: 1.4rem; color: #444; margin-bottom: 25px; min-height: 60px; font-style: italic; }
+        .prompt-text { font-size: 1.5rem; color: #444; margin-bottom: 25px; font-weight: 500; }
         
         #spellInput {
-            width: 90%;
-            padding: 15px;
-            font-size: 1.3rem;
-            border: 2px solid #eee;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            outline: none;
-            text-align: center;
+            width: 90%; padding: 15px; font-size: 1.3rem; border: 2px solid #eee;
+            border-radius: 12px; margin-bottom: 20px; outline: none; text-align: center;
         }
-
-        #spellInput:focus { border-color: var(--accent); }
 
         .btn-group { display: flex; gap: 10px; justify-content: center; }
         button.action-btn { padding: 12px 25px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
         .submit { background: var(--success); color: white; }
         .skip { background: #95a5a6; color: white; }
 
-        #feedback { margin-top: 20px; font-weight: bold; min-height: 24px; font-size: 1.1rem; }
-        .info { margin-top: 10px; color: #7f8c8d; font-size: 0.9rem; }
+        .range-picker { background: #fff; padding: 15px; display: flex; justify-content: center; gap: 10px; border-bottom: 1px solid #eee; }
+        input[type="number"] { width: 50px; }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
 <div class="nav-header">
     <a href="index.html" class="home-btn">🏠 Home</a>
-    <div style="font-weight: bold; color: var(--primary);">Vocabulary Study Station</div>
     <div id="scoreDisplay">Mastered: 0</div>
 </div>
 
-<div class="progress-container">
-    <div class="progress-fill" id="progressBar"></div>
+<div class="range-picker">
+    <strong>Range:</strong>
+    <input type="number" id="startRange" value="1"> to <input type="number" id="endRange" value="25">
+    <button onclick="setRange()">Update</button>
 </div>
 
-<div class="range-picker">
-    <strong>Study Range:</strong>
-    <label>From: <input type="number" id="startRange" value="40" min="1" max="100"></label>
-    <label>To: <input type="number" id="endRange" value="60" min="1" max="100"></label>
-    <button class="btn-set" onclick="setRange()">Start Session</button>
-</div>
+<div id="modeHeader" class="mode-indicator">WORD</div>
 
 <div class="arena">
-    <div class="info" id="poolInfo">Select a range to begin</div>
-    <div id="defDisplay" class="def-text">Example: "To praise highly."</div>
+    <div id="promptDisplay" class="prompt-text">Loading...</div>
     
-    <input type="text" id="spellInput" placeholder="Spell the word..." autocomplete="off">
+    <input type="text" id="spellInput" placeholder="Type answer here..." autocomplete="off">
     
     <div class="btn-group">
-        <button class="action-btn submit" onclick="checkAnswer()">Check Spelling</button>
-        <button class="action-btn skip" onclick="revealAnswer()">Show Answer</button>
+        <button class="action-btn submit" onclick="checkAnswer()">Submit</button>
+        <button class="action-btn skip" onclick="revealAnswer()">Skip</button>
     </div>
 
-    <div id="feedback"></div>
-    <div class="info" id="attempts">Tries left: 3</div>
+    <div id="feedback" style="margin-top:20px; font-weight:bold;"></div>
+    <div id="attempts" style="margin-top:10px; font-size:0.9rem; color:#666;">Tries left: 3</div>
 </div>
 
 <script>
-    // All 100 words in order (Summary for space - ensure your full list is here)
     const masterList = [
-        { w: "Abundant", d: "Present in large amounts." },
-        { w: "Adjacent", d: "Next to or very near." },
-        { w: "Administer", d: "To give out or manage." },
-        { w: "Agile", d: "Able to move quickly and easily." },
-        { w: "Alleviate", d: "To make something less severe." },
-        { w: "Ambulatory", d: "Able to walk." },
-        { w: "Animosity", d: "Strong dislike or anger." },
-        { w: "Arbitrary", d: "Based on random choice." },
-        { w: "Archaic", d: "Very old-fashioned." },
-        { w: "Ardent", d: "Showing strong enthusiasm." },
-        { w: "Ascend", d: "To go up." },
-        { w: "Assail", d: "To attack or criticise strongly." },
-        { w: "Astute", d: "Quick to understand." },
-        { w: "Aversion", d: "A strong dislike." },
-        { w: "Badger", d: "To repeatedly bother someone." },
-        { w: "Buff", d: "To polish until shiny." },
-        { w: "Cavalier", d: "Showing little concern." },
-        { w: "Clairvoyance", d: "Ability to know things beyond normal senses." },
-        { w: "Clemency", d: "Mercy shown to someone." },
-        { w: "Contemporary", d: "Belonging to the present time." },
-        { w: "Cope", d: "To deal successfully with something." },
-        { w: "Debris", d: "Scattered pieces of waste." },
-        { w: "Delirious", d: "Confused and excited." },
-        { w: "Dexterity", d: "Skill, especially with hands." },
-        { w: "Diatribe", d: "A long angry speech." },
-        { w: "Didactic", d: "Intended to teach." },
-        { w: "Dimension", d: "A measurement or aspect." },
-        { w: "Disdain", d: "The feeling that something is unworthy." },
-        { w: "Disencumber", d: "To free from a burden." },
-        { w: "Distraught", d: "Extremely upset." },
-        { w: "Ebb", d: "To gradually lessen." },
-        { w: "Elusive", d: "Difficult to catch or understand." },
-        { w: "Embellish", d: "To add details to decorate." },
-        { w: "Energetic", d: "Full of energy." },
-        { w: "Epic", d: "Very impressive or large." },
-        { w: "Ergonomic", d: "Designed for comfort." },
-        { w: "Euphemism", d: "A mild word used instead of a harsh one." },
-        { w: "Evident", d: "Clear and obvious." },
-        { w: "Exhibit", d: "To show publicly." },
-        { w: "Extol", d: "To praise highly." },
-        { w: "Fanfare", d: "A noisy celebration." },
-        { w: "Forlorn", d: "Sad and lonely." },
-        { w: "Forte", d: "A special strength." },
-        { w: "Founder", d: "To establish something." },
-        { w: "Fundamental", d: "Basic and very important." },
-        { w: "Gruff", d: "Rough-sounding and unfriendly." },
-        { w: "Gullible", d: "Easily tricked." },
-        { w: "Haphazard", d: "Lacking order." },
-        { w: "Horrific", d: "Extremely frightening." },
-        { w: "Hypothesis", d: "A suggested explanation." },
-        { w: "Illuminate", d: "To light up or explain." },
-        { w: "Immerse", d: "To involve deeply." },
-        { w: "Imperturbable", d: "Remaining calm." },
-        { w: "Improvise", d: "To create without preparation." },
-        { w: "Incomprehensible", d: "Impossible to understand." },
-        { w: "Inhibit", d: "To prevent or slow." },
-        { w: "Instantaneous", d: "Happening immediately." },
-        { w: "Interminable", d: "Seeming endless." },
-        { w: "Legacy", d: "Something passed down." },
-        { w: "Maim", d: "To injure badly." },
-        { w: "Malicious", d: "Intending to harm." },
-        { w: "Malignant", d: "Very harmful." },
-        { w: "Mandatory", d: "Required by rules." },
-        { w: "Mar", d: "To damage." },
-        { w: "Marginal", d: "Small in importance." },
-        { w: "Meander", d: "To wander aimlessly." },
-        { w: "Menagerie", d: "A collection of animals." },
-        { w: "Morbid", d: "Focused on death." },
-        { w: "Morose", d: "Gloomy and unhappy." },
-        { w: "Murky", d: "Dark or unclear." },
-        { w: "Nonchalant", d: "Calm and unconcerned." },
-        { w: "Nostalgia", d: "Longing for the past." },
-        { w: "Obliterate", d: "To destroy completely." },
-        { w: "Opaque", d: "Not clear." },
-        { w: "Opulent", d: "Rich and luxurious." },
-        { w: "Ornate", d: "Highly decorated." },
-        { w: "Painstaking", d: "Done with great care." },
-        { w: "Peerless", d: "Better than all others." },
-        { w: "Perceptive", d: "Quick to notice." },
-        { w: "Precipitation", d: "Rain or snow." },
-        { w: "Prodigal", d: "Wasteful." },
-        { w: "Prudent", d: "Careful and wise." },
-        { w: "Rejuvenate", d: "To make feel new again." },
-        { w: "Replenish", d: "To fill up again." },
-        { w: "Repudiate", d: "To reject." },
-        { w: "Respective", d: "Belonging separately." },
-        { w: "Ruse", d: "A trick." },
-        { w: "Sanctuary", d: "A safe place." },
-        { w: "Savory", d: "Pleasantly flavoured." },
-        { w: "Scoff", d: "To mock." },
-        { w: "Solicitude", d: "Care and concern." },
-        { w: "Specter", d: "A ghost or frightening idea." },
-        { w: "Squabble", d: "A small argument." },
-        { w: "Torrid", d: "Very hot." },
-        { w: "Tranquil", d: "Calm and peaceful." },
-        { w: "Valiant", d: "Brave." },
-        { w: "Vanguard", d: "The leading group." },
-        { w: "Venomous", d: "Poisonous." },
-        { w: "Vulnerable", d: "Easily harmed." },
-        { w: "Wince", d: "To flinch in pain." }
+        { w: "Abundant", s: "plentiful" },
+        { w: "Adjacent", s: "nearby" },
+        { w: "Administer", s: "manage" },
+        { w: "Agile", s: "nimble" },
+        { w: "Alleviate", s: "ease" },
+        { w: "Ambulatory", s: "walking" },
+        { w: "Animosity", s: "hostility" },
+        { w: "Arbitrary", s: "random" },
+        { w: "Archaic", s: "ancient" },
+        { w: "Ardent", s: "passionate" },
+        { w: "Ascend", s: "rise" },
+        { w: "Assail", s: "attack" },
+        { w: "Astute", s: "shrewd" },
+        { w: "Aversion", s: "dislike" },
+        { w: "Badger", s: "pester" },
+        { w: "Buff", s: "polish" },
+        { w: "Cavalier", s: "careless" },
+        { w: "Clairvoyance", s: "foresight" },
+        { w: "Clemency", s: "mercy" },
+        { w: "Contemporary", s: "modern" },
+        { w: "Cope", s: "manage" },
+        { w: "Debris", s: "rubble" },
+        { w: "Delirious", s: "confused" },
+        { w: "Dexterity", s: "skill" },
+        { w: "Diatribe", s: "rant" },
+        { w: "Didactic", s: "instructive" },
+        { w: "Dimension", s: "aspect" },
+        { w: "Disdain", s: "contempt" },
+        { w: "Disencumber", s: "free" },
+        { w: "Distraught", s: "upset" },
+        { w: "Ebb", s: "decline" },
+        { w: "Elusive", s: "evasive" },
+        { w: "Embellish", s: "decorate" },
+        { w: "Energetic", s: "lively" },
+        { w: "Epic", s: "grand" },
+        { w: "Ergonomic", s: "comfortable" },
+        { w: "Euphemism", s: "substitute" },
+        { w: "Evident", s: "obvious" },
+        { w: "Exhibit", s: "display" },
+        { w: "Extol", s: "praise" },
+        { w: "Fanfare", s: "celebration" },
+        { w: "Forlorn", s: "lonely" },
+        { w: "Forte", s: "strength" },
+        { w: "Founder", s: "establish" },
+        { w: "Fundamental", s: "basic" },
+        { w: "Gruff", s: "rough" },
+        { w: "Gullible", s: "naive" },
+        { w: "Haphazard", s: "random" },
+        { w: "Horrific", s: "terrifying" },
+        { w: "Hypothesis", s: "theory" },
+        { w: "Illuminate", s: "clarify" },
+        { w: "Immerse", s: "submerge" },
+        { w: "Imperturbable", s: "calm" },
+        { w: "Improvise", s: "adapt" },
+        { w: "Incomprehensible", s: "baffling" },
+        { w: "Inhibit", s: "restrain" },
+        { w: "Instantaneous", s: "immediate" },
+        { w: "Interminable", s: "endless" },
+        { w: "Legacy", s: "inheritance" },
+        { w: "Maim", s: "injure" },
+        { w: "Malicious", s: "spiteful" },
+        { w: "Malignant", s: "harmful" },
+        { w: "Mandatory", s: "required" },
+        { w: "Mar", s: "damage" },
+        { w: "Marginal", s: "minor" },
+        { w: "Meander", s: "wander" },
+        { w: "Menagerie", s: "collection" },
+        { w: "Morbid", s: "grim" },
+        { w: "Morose", s: "sullen" },
+        { w: "Murky", d: "dark" },
+        { w: "Nonchalant", s: "casual" },
+        { w: "Nostalgia", s: "longing" },
+        { w: "Obliterate", s: "destroy" },
+        { w: "Opaque", s: "cloudy" },
+        { w: "Opulent", s: "luxurious" },
+        { w: "Ornate", s: "elaborate" },
+        { w: "Painstaking", s: "careful" },
+        { w: "Peerless", s: "unmatched" },
+        { w: "Perceptive", s: "insightful" },
+        { w: "Precipitation", s: "rainfall" },
+        { w: "Prodigal", s: "wasteful" },
+        { w: "Prudent", s: "wise" },
+        { w: "Rejuvenate", s: "revive" },
+        { w: "Replenish", s: "refill" },
+        { w: "Repudiate", s: "reject" },
+        { w: "Respective", s: "individual" },
+        { w: "Ruse", s: "ploy" },
+        { w: "Sanctuary", s: "refuge" },
+        { w: "Savory", s: "tasty" },
+        { w: "Scoff", s: "mock" },
+        { w: "Solicitude", s: "care" },
+        { w: "Specter", s: "ghost" },
+        { w: "Squabble", s: "quarrel" },
+        { w: "Torrid", s: "scorching" },
+        { w: "Tranquil", s: "peaceful" },
+        { w: "Valiant", s: "brave" },
+        { w: "Vanguard", s: "forefront" },
+        { w: "Venomous", s: "poisonous" },
+        { w: "Vulnerable", s: "exposed" },
+        { w: "Wince", s: "flinch" }
     ];
 
-    let practicePool = [];
-    let currentItem = {};
+    let pool = [];
+    let current = {};
+    let isAskingWord = true; // Toggle state
     let tries = 3;
-    let masteredCount = 0;
+    let score = 0;
 
     function setRange() {
-        const start = parseInt(document.getElementById('startRange').value) - 1;
-        const end = parseInt(document.getElementById('endRange').value);
-        
-        practicePool = masterList.slice(start, end);
-        masteredCount = 0;
-        updateUI();
-        nextWord();
+        const s = parseInt(document.getElementById('startRange').value)-1;
+        const e = parseInt(document.getElementById('endRange').value);
+        pool = masterList.slice(s, e);
+        next();
     }
 
-    function nextWord() {
+    function next() {
         tries = 3;
-        currentItem = practicePool[Math.floor(Math.random() * practicePool.length)];
-        document.getElementById('defDisplay').innerText = `"${currentItem.d}"`;
+        isAskingWord = Math.random() > 0.5;
+        current = pool[Math.floor(Math.random() * pool.length)];
+        
+        document.getElementById('modeHeader').innerText = isAskingWord ? "WORD" : "SYNONYM";
+        document.getElementById('modeHeader').style.color = isAskingWord ? "#3498db" : "#9b59b6";
+        
+        // If asking for Word, show Synonym. If asking for Synonym, show Word.
+        document.getElementById('promptDisplay').innerText = isAskingWord ? `Synonym: "${current.s}"` : `Word: "${current.w}"`;
+        
         document.getElementById('spellInput').value = '';
         document.getElementById('feedback').innerText = '';
         document.getElementById('attempts').innerText = `Tries left: ${tries}`;
@@ -262,20 +226,20 @@
 
     function checkAnswer() {
         const guess = document.getElementById('spellInput').value.trim().toLowerCase();
-        const answer = currentItem.w.toLowerCase();
-        const fb = document.getElementById('feedback');
+        const target = isAskingWord ? current.w.toLowerCase() : current.s.toLowerCase();
 
-        if (guess === answer) {
-            fb.innerText = "✨ Correct Spelling!";
-            fb.style.color = "var(--success)";
-            masteredCount++;
-            updateUI();
-            setTimeout(nextWord, 1200);
+        if (guess === target) {
+            document.getElementById('feedback').innerText = "✅ Correct!";
+            document.getElementById('feedback').style.color = "var(--success)";
+            score++;
+            document.getElementById('scoreDisplay').innerText = `Mastered: ${score}`;
+            setTimeout(next, 1000);
         } else {
+            triggerShake();
             tries--;
             if (tries > 0) {
-                fb.innerText = "❌ Try again!";
-                fb.style.color = "var(--danger)";
+                document.getElementById('feedback').innerText = "❌ Wrong! Try again.";
+                document.getElementById('feedback').style.color = "var(--danger)";
                 document.getElementById('attempts').innerText = `Tries left: ${tries}`;
             } else {
                 revealAnswer();
@@ -283,24 +247,20 @@
         }
     }
 
+    function triggerShake() {
+        const body = document.getElementById('mainBody');
+        body.classList.add('shake-screen');
+        setTimeout(() => body.classList.remove('shake-screen'), 500);
+    }
+
     function revealAnswer() {
-        const fb = document.getElementById('feedback');
-        fb.innerHTML = `Correct Word: <strong>${currentItem.w}</strong>`;
-        fb.style.color = "var(--primary)";
-        setTimeout(nextWord, 2500);
+        const ans = isAskingWord ? current.w : current.s;
+        document.getElementById('feedback').innerHTML = `The answer was: <strong>${ans}</strong>`;
+        document.getElementById('feedback').style.color = "var(--primary)";
+        setTimeout(next, 2500);
     }
 
-    function updateUI() {
-        document.getElementById('scoreDisplay').innerText = `Mastered: ${masteredCount}`;
-        const percent = (masteredCount / practicePool.length) * 100;
-        document.getElementById('progressBar').style.width = Math.min(percent, 100) + "%";
-        document.getElementById('poolInfo').innerText = `Challenge Pool: ${practicePool.length} Words`;
-    }
-
-    document.getElementById('spellInput').addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') checkAnswer();
-    });
-
+    document.getElementById('spellInput').addEventListener('keyup', (e) => { if(e.key==='Enter') checkAnswer(); });
     setRange();
 </script>
 
