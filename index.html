@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test A+ | Home</title>
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            --primary: #4a90e2;
+            --secondary: #67e8f9;
+            --bg: #f0f4f8;
+            --text: #2d3748;
+            --error: #f56565;
+            --success: #48bb78;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 0.5rem; font-size: 2.5rem; }
+        p.subtitle { color: #718096; margin-bottom: 2rem; }
+
+        .range-box {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 2px solid #edf2f7;
+            margin-bottom: 2rem;
+        }
+
+        .inputs {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem 0;
+        }
+
+        input {
+            width: 80px;
+            padding: 0.8rem;
+            border: 2px solid #cbd5e0;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-save {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .btn-save:hover { background: #357abd; transform: translateY(-2px); }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .nav-btn {
+            padding: 1rem;
+            text-decoration: none;
+            background: white;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        .nav-btn:not(.disabled):hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        #message {
+            height: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Test A+</h1>
+    <p class="subtitle">Master your vocabulary, 20 words at a time.</p>
+
+    <div class="range-box">
+        <h3>Set Word Range</h3>
+        <div class="inputs">
+            <div>
+                <label>From</label><br>
+                <input type="number" id="startRange" placeholder="1">
+            </div>
+            <span>to</span>
+            <div>
+                <label>To</label><br>
+                <input type="number" id="endRange" placeholder="20">
+            </div>
+        </div>
+        <button class="btn-save" onclick="saveRange()">Save Range</button>
+        <div id="message"></div>
+    </div>
+
+    <div class="nav-grid">
+        <a href="spelling.html" class="nav-btn disabled" id="link-spelling">✏️ Spelling</a>
+        <a href="learn.html" class="nav-btn disabled" id="link-learn">📖 Learn</a>
+        <a href="match.html" class="nav-btn disabled" id="link-match">🧩 Match</a>
+        <a href="quiz.html" class="nav-btn disabled" id="link-quiz">📝 Quiz</a>
+    </div>
+</div>
+
+<script>
+    /* --- JAVASCRIPT LOGIC --- */
+    
+    function saveRange() {
+        const start = parseInt(document.getElementById('startRange').value);
+        const end = parseInt(document.getElementById('endRange').value);
+        const message = document.getElementById('message');
+        
+        // Validation Rules
+        if (isNaN(start) || isNaN(end)) {
+            showError("Please enter both numbers.");
+            return;
+        }
+        if (start < 1) {
+            showError("Start number must be at least 1.");
+            return;
+        }
+        if (end <= start) {
+            showError("The 'To' number must be bigger than 'From'.");
+            return;
+        }
+        if ((end - start + 1) > 20) {
+            showError("Max 20 words allowed! Currently: " + (end - start + 1));
+            return;
+        }
+
+        // Success: Save to LocalStorage
+        const rangeData = { start: start, end: end };
+        localStorage.setItem('testARange', JSON.stringify(rangeData));
+        
+        message.style.color = "var(--success)";
+        message.innerText = "Range Saved! Choose a mode below.";
+        
+        enableButtons();
+    }
+
+    function showError(text) {
+        const message = document.getElementById('message');
+        message.style.color = "var(--error)";
+        message.innerText = text;
+        disableButtons();
+    }
+
+    function enableButtons() {
+        const buttons = document.querySelectorAll('.nav-btn');
+        buttons.forEach(btn => btn.classList.remove('disabled'));
+    }
+
+    function disableButtons() {
+        const buttons = document.querySelectorAll('.nav-btn');
+        buttons.forEach(btn => btn.classList.add('disabled'));
+    }
+
+    // Check if range already exists on load
+    window.onload = () => {
+        const saved = localStorage.getItem('testARange');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('startRange').value = data.start;
+            document.getElementById('endRange').value = data.end;
+            enableButtons();
+        }
+    }
+</script>
+
+</body>
+</html>
