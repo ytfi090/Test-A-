@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocab Match: Drag & Drop</title>
+    <title>Vocab Match: Drag Challenge</title>
     <style>
         :root {
             --primary: #2c3e50;
             --accent: #3498db;
             --success: #27ae60;
+            --error: #e74c3c;
             --bg: #f4f7f6;
         }
 
@@ -42,203 +43,196 @@
             border-radius: 5px;
         }
 
-        h1 { margin-top: 30px; color: var(--primary); }
-
-        .match-container {
-            display: flex;
-            gap: 50px;
-            margin-top: 20px;
-            max-width: 800px;
-            width: 95%;
-            padding-bottom: 50px;
-        }
-
-        .column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .word-item {
+        .game-card {
             background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            font-weight: bold;
+            width: 90%;
+            max-width: 500px;
+            margin-top: 40px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
         }
 
-        .drop-zone {
-            background: #dfe6e9;
-            height: 50px;
-            border-radius: 8px;
-            border: 2px dashed #b2bec3;
+        .mode-label { color: var(--accent); font-weight: bold; text-transform: uppercase; font-size: 0.8rem; }
+        .target-word { font-size: 2.5rem; font-weight: 900; margin: 10px 0; color: var(--primary); }
+        
+        .drop-area {
+            background: #edf2f7;
+            border: 3px dashed #cbd5e0;
+            height: 80px;
+            border-radius: 15px;
+            margin: 20px 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: bold;
+            color: #a0aec0;
             transition: 0.3s;
-            font-size: 0.9rem;
-            color: #636e72;
         }
 
-        .draggable {
-            background: var(--accent);
-            color: white;
-            padding: 18px;
-            border-radius: 10px;
+        .drop-area.hover { background: #e2e8f0; border-color: var(--accent); }
+        .drop-area.correct { background: var(--success); border-color: var(--success); color: white; border-style: solid; }
+
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .draggable-choice {
+            background: white;
+            border: 2px solid #edf2f7;
+            padding: 15px;
+            border-radius: 12px;
             cursor: grab;
-            text-align: center;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            user-select: none;
-            transition: transform 0.2s;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .draggable:active { cursor: grabbing; transform: scale(1.05); }
+        .draggable-choice:active { cursor: grabbing; transform: scale(1.05); }
 
-        .correct { background: var(--success) !important; border-color: var(--success); color: white; border-style: solid; font-weight: bold; }
-        
-        #message {
-            margin-top: 10px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--success);
-            height: 40px;
-        }
+        #feedback { height: 30px; margin-top: 20px; font-weight: bold; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
 <nav>
     <a href="index.html" class="home-btn">🏠 Home</a>
-    <div id="rangeDisplay" style="font-weight: bold; color: var(--accent);">Range: --</div>
-    <div id="timerDisplay" style="font-weight: bold; font-family: monospace;">Time left: --:--</div>
+    <div id="scoreDisplay" style="font-weight: bold;">Score: 0</div>
 </nav>
 
-<h1>Match the Pairs</h1>
-<p>Drag the <strong>Synonyms</strong> to the matching <strong>Words</strong></p>
+<div class="game-card">
+    <div id="modeDisplay" class="mode-label">Find the Match</div>
+    <div id="targetDisplay" class="target-word">---</div>
+    
+    <div class="drop-area" id="dropZone">Drop correct answer here</div>
 
-<div class="match-container" id="gameBoard">
-    <div class="column" id="wordCol"></div>
-    <div class="column" id="synCol"></div>
+    <div class="choices-grid" id="choicesContainer">
+        </div>
+
+    <div id="feedback"></div>
 </div>
-
-<div id="message"></div>
 
 <script>
     const fullWordBank = [
-        {w:"Abundant",s:"plentiful"},{w:"Adjacent",s:"nearby"},{w:"Administer",s:"manage"},{w:"Agile",s:"nimble"},{w:"Alleviate",s:"ease"},
-        {w:"Ambulatory",s:"walking"},{w:"Animosity",s:"hostility"},{w:"Arbitrary",s:"random"},{w:"Archaic",s:"ancient"},{w:"Ardent",s:"passionate"},
-        {w:"Ascend",s:"rise"},{w:"Assail",s:"attack"},{w:"Astute",s:"shrewd"},{w:"Aversion",s:"dislike"},{w:"Badger",s:"pester"},
-        {w:"Buff",s:"polish"},{w:"Cavalier",s:"careless"},{w:"Clairvoyance",s:"foresight"},{w:"Clemency",s:"mercy"},{w:"Contemporary",s:"modern"},
-        {w:"Cope",s:"handle"},{w:"Debris",s:"rubble"},{w:"Delirious",s:"confused"},{w:"Dexterity",s:"skill"},{w:"Diatribe",s:"rant"},
-        {w:"Didactic",s:"instructive"},{w:"Dimension",s:"aspect"},{w:"Disdain",s:"contempt"},{w:"Disencumber",s:"free"},{w:"Distraught",s:"distressed"},
-        {w:"Ebb",s:"decline"},{w:"Elusive",s:"evasive"},{w:"Embellish",s:"decorate"},{w:"Energetic",s:"lively"},{w:"Epic",s:"grand"},
-        {w:"Ergonomic",s:"comfortable"},{w:"Euphemism",s:"substitute"},{w:"Evident",s:"obvious"},{w:"Exhibit",s:"display"},{w:"Extol",s:"praise"},
-        {w:"Fanfare",s:"celebration"},{w:"Forlorn",s:"lonely"},{w:"Forte",s:"strength"},{w:"Founder",s:"establish"},{w:"Fundamental",s:"basic"},
-        {w:"Gruff",s:"rough"},{w:"Gullible",s:"naive"},{w:"Haphazard",s:"random"},{w:"Horrific",s:"terrifying"},{w:"Hypothesis",s:"theory"},
-        {w:"Illuminate",s:"clarify"},{w:"Immerse",s:"submerge"},{w:"Imperturbable",s:"calm"},{w:"Improvise",s:"adapt"},{w:"Incomprehensible",s:"baffling"},
-        {w:"Inhibit",s:"restrain"},{w:"Instantaneous",s:"immediate"},{w:"Interminable",s:"endless"},{w:"Legacy",s:"inheritance"},{w:"Maim",s:"injure"},
-        {w:"Malicious",s:"spiteful"},{w:"Malignant",s:"harmful"},{w:"Mandatory",s:"required"},{w:"Mar",s:"damage"},{w:"Marginal",s:"minor"},
-        {w:"Meander",s:"wander"},{w:"Menagerie",s:"collection"},{w:"Morbid",s:"grim"},{w:"Morose",s:"sullen"},{w:"Murky",s:"dark"},
-        {w:"Nonchalant",s:"casual"},{w:"Nostalgia",s:"longing"},{w:"Obliterate",s:"destroy"},{w:"Opaque",s:"cloudy"},{w:"Opulent",s:"luxurious"},
-        {w:"Ornate",s:"elaborate"},{w:"Painstaking",s:"thorough"},{w:"Peerless",s:"unmatched"},{w:"Perceptive",s:"insightful"},{w:"Precipitation",s:"rainfall"},
-        {w:"Prodigal",s:"wasteful"},{w:"Prudent",s:"wise"},{w:"Rejuvenate",s:"revive"},{w:"Replenish",s:"refill"},{w:"Repudiate",s:"reject"},
-        {w:"Respective",s:"corresponding"},{w:"Ruse",s:"trick"},{w:"Sanctuary",s:"refuge"},{w:"Savory",s:"tasty"},{w:"Scoff",s:"mock"},
-        {w:"Solicitude",s:"care"},{w:"Specter",s:"ghost"},{w:"Squabble",s:"quarrel"},{w:"Torrid",s:"scorching"},{w:"Tranquil",s:"peaceful"},
-        {w:"Valiant",s:"brave"},{w:"Vanguard",s:"forefront"},{w:"Venomous",s:"poisonous"},{w:"Vulnerable",s:"defenceless"},{w:"Wince",s:"flinch"}
+        {w:"Abundant",m:"Present in large amounts.",s:"plentiful"},{w:"Adjacent",m:"Next to or very near.",s:"nearby"},{w:"Administer",m:"To give out or manage.",s:"manage"},{w:"Agile",m:"Able to move quickly and easily.",s:"nimble"},{w:"Alleviate",m:"To make something less severe.",s:"ease"},
+        {w:"Ambulatory",m:"Able to walk.",s:"walking"},{w:"Animosity",m:"Strong dislike or anger.",s:"hostility"},{w:"Arbitrary",m:"Based on random choice.",s:"random"},{w:"Archaic",m:"Very old-fashioned.",s:"ancient"},{w:"Ardent",m:"Showing strong enthusiasm.",s:"passionate"},
+        {w:"Ascend",m:"To go up.",s:"rise"},{w:"Assail",m:"To attack or criticise strongly.",s:"attack"},{w:"Astute",m:"Quick to understand.",s:"shrewd"},{w:"Aversion",m:"A strong dislike.",s:"dislike"},{w:"Badger",m:"To repeatedly bother someone.",s:"pester"},
+        {w:"Buff",m:"To polish until shiny.",s:"polish"},{w:"Cavalier",m:"Showing little concern.",s:"careless"},{w:"Clairvoyance",m:"Ability to know things beyond normal senses.",s:"foresight"},{w:"Clemency",m:"Mercy shown to someone.",s:"mercy"},{w:"Contemporary",m:"Belonging to the present time.",s:"modern"},
+        {w:"Cope",m:"To deal successfully with something.",s:"handle"},{w:"Debris",m:"Scattered pieces of waste.",s:"rubble"},{w:"Delirious",m:"Confused and excited.",s:"confused"},{w:"Dexterity",m:"Skill, especially with hands.",s:"skill"},{w:"Diatribe",m:"A long angry speech.",s:"rant"},
+        {w:"Didactic",m:"Intended to teach.",s:"instructive"},{w:"Dimension",m:"A measurement or aspect.",s:"aspect"},{w:"Disdain",m:"The feeling that something is unworthy.",s:"contempt"},{w:"Disencumber",m:"To free from a burden.",s:"free"},{w:"Distraught",m:"Extremely upset.",s:"distressed"},
+        {w:"Ebb",m:"To gradually lessen.",s:"decline"},{w:"Elusive",m:"Difficult to catch or understand.",s:"evasive"},{w:"Embellish",m:"To add details to decorate.",s:"decorate"},{w:"Energetic",m:"Full of energy.",s:"lively"},{w:"Epic",m:"Very impressive or large.",s:"grand"},
+        {w:"Ergonomic",m:"Designed for comfort.",s:"comfortable"},{w:"Euphemism",m:"A mild word used instead of a harsh one.",s:"substitute"},{w:"Evident",m:"Clear and obvious.",s:"obvious"},{w:"Exhibit",m:"To show publicly.",s:"display"},{w:"Extol",m:"To praise highly.",s:"praise"},
+        {w:"Fanfare",m:"A noisy celebration.",s:"celebration"},{w:"Forlorn",m:"Sad and lonely.",s:"lonely"},{w:"Forte",m:"A special strength.",s:"strength"},{w:"Founder",m:"To establish something.",s:"establish"},{w:"Fundamental",m:"Basic and very important.",s:"basic"},
+        {w:"Gruff",m:"Rough-sounding and unfriendly.",s:"rough"},{w:"Gullible",m:"Easily tricked.",s:"naive"},{w:"Haphazard",m:"Lacking order.",s:"random"},{w:"Horrific",m:"Extremely frightening.",s:"terrifying"},{w:"Hypothesis",m:"A suggested explanation.",s:"theory"},
+        {w:"Illuminate",m:"To light up or explain.",s:"clarify"},{w:"Immerse",m:"To involve deeply.",s:"submerge"},{w:"Imperturbable",m:"Remaining calm.",s:"calm"},{w:"Improvise",m:"To create without preparation.",s:"adapt"},{w:"Incomprehensible",m:"Impossible to understand.",s:"baffling"},
+        {w:"Inhibit",m:"To prevent or slow.",s:"restrain"},{w:"Instantaneous",m:"Happening immediately.",s:"immediate"},{w:"Interminable",m:"Seeming endless.",s:"endless"},{w:"Legacy",m:"Something passed down.",s:"inheritance"},{w:"Maim",m:"To injure badly.",s:"injure"},
+        {w:"Malicious",m:"Intending to harm.",s:"spiteful"},{w:"Malignant",m:"Very harmful.",s:"harmful"},{w:"Mandatory",m:"Required by rules.",s:"required"},{w:"Mar",m:"To damage.",s:"damage"},{w:"Marginal",m:"Small in importance.",s:"minor"},
+        {w:"Meander",m:"To wander aimlessly.",s:"wander"},{w:"Menagerie",m:"A collection of animals.",s:"collection"},{w:"Morbid",m:"Focused on death.",s:"grim"},{w:"Morose",m:"Gloomy and unhappy.",s:"sullen"},{w:"Murky",m:"Dark or unclear.",s:"dark"},
+        {w:"Nonchalant",m:"Calm and unconcerned.",s:"casual"},{w:"Nostalgia",m:"Longing for the past.",s:"longing"},{w:"Obliterate",m:"To destroy completely.",s:"destroy"},{w:"Opaque",m:"Not clear.",s:"cloudy"},{w:"Opulent",m:"Rich and luxurious.",s:"luxurious"},
+        {w:"Ornate",m:"Highly decorated.",s:"elaborate"},{w:"Painstaking",m:"Done with great care.",s:"thorough"},{w:"Peerless",m:"Better than all others.",s:"unmatched"},{w:"Perceptive",m:"Quick to notice.",s:"insightful"},{w:"Precipitation",m:"Rain or snow.",s:"rainfall"},
+        {w:"Prodigal",m:"Wasteful.",s:"wasteful"},{w:"Prudent",m:"Careful and wise.",s:"wise"},{w:"Rejuvenate",m:"To make feel new again.",s:"revive"},{w:"Replenish",m:"To fill up again.",s:"refill"},{w:"Repudiate",m:"To reject.",s:"reject"},
+        {w:"Respective",m:"Belonging separately.",s:"corresponding"},{w:"Ruse",m:"A trick.",s:"trick"},{w:"Sanctuary",m:"A safe place.",s:"refuge"},{w:"Savory",m:"Pleasantly flavoured.",s:"tasty"},{w:"Scoff",m:"To mock.",s:"mock"},
+        {w:"Solicitude",m:"Care and concern.",s:"care"},{w:"Specter",m:"A ghost or frightening idea.",s:"ghost"},{w:"Squabble",m:"A small argument.",s:"quarrel"},{w:"Torrid",m:"Very hot.",s:"scorching"},{w:"Tranquil",m:"Calm and peaceful.",s:"peaceful"},
+        {w:"Valiant",m:"Brave.",s:"brave"},{w:"Vanguard",m:"The leading group.",s:"forefront"},{w:"Venomous",m:"Poisonous.",s:"poisonous"},{w:"Vulnerable",m:"Easily harmed.",s:"defenceless"},{w:"Wince",m:"To flinch in pain.",s:"flinch"}
     ];
 
-    let matchesToMake = 5; 
-    let currentPairs = [];
+    let sessionPool = [];
+    let score = 0;
+    let currentItem = {};
+    let correctAnswer = "";
 
     function initGame() {
         const start = parseInt(localStorage.getItem('startWord')) || 1;
         const end = parseInt(localStorage.getItem('endWord')) || 100;
-        document.getElementById('rangeDisplay').innerText = `Range: ${start}-${end}`;
-
-        const pool = fullWordBank.slice(start - 1, end);
-        
-        // Pick random words from the selected range
-        currentPairs = pool.sort(() => 0.5 - Math.random()).slice(0, matchesToMake);
-        
-        renderBoard();
+        sessionPool = fullWordBank.slice(start - 1, end);
+        loadNewChallenge();
     }
 
-    function renderBoard() {
-        const wordCol = document.getElementById('wordCol');
-        const synCol = document.getElementById('synCol');
-        wordCol.innerHTML = '';
-        synCol.innerHTML = '';
+    function loadNewChallenge() {
+        const dropZone = document.getElementById('dropZone');
+        const container = document.getElementById('choicesContainer');
+        const feedback = document.getElementById('feedback');
         
-        const shuffledSyns = [...currentPairs].sort(() => 0.5 - Math.random());
+        feedback.innerText = "";
+        dropZone.innerText = "Drop correct answer here";
+        dropZone.className = "drop-area";
+        container.innerHTML = "";
 
-        currentPairs.forEach((pair, index) => {
-            const row = document.createElement('div');
-            row.className = 'word-item';
-            row.innerHTML = `<span>${pair.w}</span> <div class="drop-zone" data-word="${pair.w}" id="drop-${index}">Drop Synonym Here</div>`;
-            wordCol.appendChild(row);
-        });
+        // Randomize Mode
+        const isFindingSynonym = Math.random() > 0.5;
+        currentItem = sessionPool[Math.floor(Math.random() * sessionPool.length)];
+        
+        if (isFindingSynonym) {
+            document.getElementById('modeDisplay').innerText = "Find the Synonym for:";
+            document.getElementById('targetDisplay').innerText = currentItem.w;
+            correctAnswer = currentItem.s;
+        } else {
+            document.getElementById('modeDisplay').innerText = "Find the Word for:";
+            document.getElementById('targetDisplay').innerText = currentItem.s;
+            correctAnswer = currentItem.w;
+        }
 
-        shuffledSyns.forEach(pair => {
-            const dragItem = document.createElement('div');
-            dragItem.className = 'draggable';
-            dragItem.draggable = true;
-            dragItem.innerText = pair.s;
-            dragItem.id = `drag-${pair.w.replace(/\s/g, '')}`;
+        // Generate 4 options
+        let options = [correctAnswer];
+        while (options.length < 4) {
+            let rand = fullWordBank[Math.floor(Math.random() * fullWordBank.length)];
+            let wrong = isFindingSynonym ? rand.s : rand.w;
+            if (!options.includes(wrong)) options.push(wrong);
+        }
+        options.sort(() => Math.random() - 0.5);
+
+        options.forEach(opt => {
+            const div = document.createElement('div');
+            div.className = 'draggable-choice';
+            div.innerText = opt;
+            div.draggable = true;
+            div.id = "choice-" + opt.replace(/\s/g, '');
             
-            dragItem.addEventListener('dragstart', (e) => {
+            div.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text', e.target.id);
             });
+            container.appendChild(div);
+        });
+    }
+
+    // Drop Zone Logic
+    const zone = document.getElementById('dropZone');
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('hover');
+    });
+
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('hover');
+    });
+
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('hover');
+        
+        const draggedId = e.dataTransfer.getData('text');
+        const draggedElement = document.getElementById(draggedId);
+        const userChoice = draggedElement.innerText;
+
+        if (userChoice === correctAnswer) {
+            zone.innerText = userChoice;
+            zone.className = "drop-area correct";
+            document.getElementById('feedback').innerText = "✓ Correct!";
+            document.getElementById('feedback').style.color = "var(--success)";
+            score++;
+            document.getElementById('scoreDisplay').innerText = "Score: " + score;
             
-            synCol.appendChild(dragItem);
-        });
-
-        setupDropZones();
-    }
-
-    function setupDropZones() {
-        const zones = document.querySelectorAll('.drop-zone');
-        zones.forEach(zone => {
-            zone.addEventListener('dragover', (e) => e.preventDefault());
-            zone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const dragId = e.dataTransfer.getData('text');
-                const draggedElement = document.getElementById(dragId);
-                const targetWord = zone.getAttribute('data-word');
-                const draggedWordKey = dragId.replace('drag-', '');
-
-                if (targetWord.replace(/\s/g, '') === draggedWordKey) {
-                    zone.innerHTML = draggedElement.innerText;
-                    zone.className = "drop-zone correct";
-                    draggedElement.style.visibility = "hidden";
-                    checkWin();
-                } else {
-                    zone.style.borderColor = "red";
-                    zone.innerText = "❌ Try Again";
-                    setTimeout(() => {
-                        zone.style.borderColor = "#b2bec3";
-                        zone.innerText = "Drop Synonym Here";
-                    }, 800);
-                }
-            });
-        });
-    }
-
-    function checkWin() {
-        const corrects = document.querySelectorAll('.correct');
-        if (corrects.length === matchesToMake) {
-            document.getElementById('message').innerText = "🎉 Excellent! Loading new words...";
-            setTimeout(() => {
-                document.getElementById('message').innerText = "";
-                initGame(); 
-            }, 2000);
+            setTimeout(loadNewChallenge, 1200);
+        } else {
+            document.getElementById('feedback').innerText = "✗ Try again!";
+            document.getElementById('feedback').style.color = "var(--error)";
+            // Effect: The word stays in the grid (effectively "going back" because it never stuck)
         }
-    }
+    });
 
     initGame();
 </script>
