@@ -20,6 +20,29 @@
             color: #333;
         }
 
+        /* Nav Bar for Back Button */
+        .nav-bar {
+            padding: 1rem 2rem;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .back-button {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+
+        .back-button:hover {
+            color: var(--accent);
+        }
+
         header {
             background: var(--primary);
             color: white;
@@ -116,6 +139,13 @@
 </head>
 <body>
 
+<nav class="nav-bar">
+    <a href="index.html" class="back-button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to Homepage
+    </a>
+</nav>
+
 <header>
     <h1>Year 8 Vocabulary Deck</h1>
     <p>100 High-Level Words to Transform Your Writing</p>
@@ -131,6 +161,7 @@
 </div>
 
 <script>
+    // [Data remains the same as previously provided - all 100 words included]
     const vocabList = [
         { w: "Abundant", d: "Present in large amounts.", s: ["plentiful", "ample"] },
         { w: "Adjacent", d: "Next to or very near.", s: ["nearby", "neighbouring"] },
@@ -262,7 +293,6 @@
         counter.innerText = `Showing ${filtered.length} words`;
     }
 
-    // Initial render
     renderWords();
 </script>
 
