@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocab Match Challenge</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --word-color: #3498db;
+            --syn-color: #9b59b6;
+            --success: #27ae60;
+            --error: #e74c3c;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Shake Animation */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        .shake-effect { animation: shake 0.5s ease; }
+
+        /* Navigation */
+        nav {
+            width: 100%;
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
+
+        .home-btn {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: bold;
+            border: 2px solid var(--primary);
+            padding: 8px 20px;
+            border-radius: 5px;
+        }
+
+        .timer-pill {
+            background: var(--primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* Header Mode */
+        #modeHeader {
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 40px 0 10px 0;
+            letter-spacing: 3px;
+            text-align: center;
+        }
+
+        /* Game Card */
+        .container {
+            background: white;
+            width: 90%;
+            max-width: 550px;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .clue-text { font-size: 1.3rem; margin: 5px 0; color: #333; }
+        .meaning-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-style: italic;
+            color: #555;
+            border-left: 5px solid #ddd;
+        }
+
+        .instruction { font-weight: bold; font-size: 1.1rem; margin-top: 30px; display: block; }
+
+        #userInput {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.4rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .check-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #feedback {
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 24px;
+            font-size: 1.1rem;
+        }
+
+        #scoreDisplay { font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body id="mainBody">
+
+<nav>
+    <a href="index.html" class="home-btn">🏠 Home</a>
+    <div id="scoreDisplay">Mastered: 0</div>
+    <div class="timer-pill" id="timerDisplay">--:--</div>
+</nav>
+
+<h1 id="modeHeader">WORD</h1>
+
+<div class="container">
+    <div class="clue-text" id="clueLine">Synonym: handle</div>
+    <div class="meaning-box" id="meaningLine">"to deal successfully with something"</div>
+
+    <label class="instruction" id="promptText">Spell the word:</label>
+    <input type="text" id="userInput" placeholder="Type answer here..." autocomplete="off">
+    
+    <button class="check-btn" onclick="checkAnswer()">Check Answer</button>
+
+    <div id="feedback"></div>
+</div>
+
+<script>
+    const fullWordBank = [
+        { word: "Abundant", meaning: "Present in large amounts.", synonym: "plentiful" },
+        { word: "Adjacent", meaning: "Next to or very near.", synonym: "nearby" },
+        { word: "Administer", meaning: "To give out or manage.", synonym: "manage" },
+        { word: "Agile", meaning: "Able to move quickly and easily.", synonym: "nimble" },
+        { word: "Alleviate", meaning: "To make something less severe.", synonym: "ease" },
+        { word: "Ambulatory", meaning: "Able to walk.", synonym: "walking" },
+        { word: "Animosity", meaning: "Strong dislike or anger.", synonym: "hostility" },
+        { word: "Arbitrary", meaning: "Based on random choice.", synonym: "random" },
+        { word: "Archaic", meaning: "Very old-fashioned.", synonym: "ancient" },
+        { word: "Ardent", meaning: "Showing strong enthusiasm.", synonym: "passionate" },
+        { word: "Ascend", meaning: "To go up.", synonym: "rise" },
+        { word: "Assail", meaning: "To attack or criticise strongly.", synonym: "attack" },
+        { word: "Astute", meaning: "Quick to understand.", synonym: "shrewd" },
+        { word: "Aversion", meaning: "A strong dislike.", synonym: "dislike" },
+        { word: "Badger", meaning: "To repeatedly bother someone.", synonym: "pester" },
+        { word: "Buff", meaning: "To polish until shiny.", synonym: "polish" },
+        { word: "Cavalier", meaning: "Showing little concern.", synonym: "careless" },
+        { word: "Clairvoyance", meaning: "Ability to know things beyond normal senses.", synonym: "foresight" },
+        { word: "Clemency", meaning: "Mercy shown to someone.", synonym: "mercy" },
+        { word: "Contemporary", meaning: "Belonging to the present time.", synonym: "modern" },
+        { word: "Cope", meaning: "To deal successfully with something.", synonym: "manage" },
+        { word: "Debris", meaning: "Scattered pieces of waste.", synonym: "rubble" },
+        { word: "Delirious", meaning: "Confused and excited.", synonym: "confused" },
+        { word: "Dexterity", meaning: "Skill, especially with hands.", synonym: "skill" },
+        { word: "Diatribe", meaning: "A long angry speech.", synonym: "rant" },
+        { word: "Didactic", meaning: "Intended to teach.", synonym: "instructive" },
+        { word: "Dimension", meaning: "A measurement or aspect.", synonym: "aspect" },
+        { word: "Disdain", meaning: "The feeling that something is unworthy.", synonym: "contempt" },
+        { word: "Disencumber", meaning: "To free from a burden.", synonym: "free" },
+        { word: "Distraught", meaning: "Extremely upset.", synonym: "distressed" },
+        { word: "Ebb", meaning: "To gradually lessen.", synonym: "decline" },
+        { word: "Elusive", meaning: "Difficult to catch or understand.", synonym: "evasive" },
+        { word: "Embellish", meaning: "To add details to decorate.", synonym: "decorate" },
+        { word: "Energetic", meaning: "Full of energy.", synonym: "lively" },
+        { word: "Epic", meaning: "Very impressive or large.", synonym: "grand" },
+        { word: "Ergonomic", meaning: "Designed for comfort.", synonym: "comfortable" },
+        { word: "Euphemism", meaning: "A mild word used instead of a harsh one.", synonym: "substitute" },
+        { word: "Evident", meaning: "Clear and obvious.", synonym: "obvious" },
+        { word: "Exhibit", meaning: "To show publicly.", synonym: "display" },
+        { word: "Extol", meaning: "To praise highly.", synonym: "praise" },
+        { word: "Fanfare", meaning: "A noisy celebration.", synonym: "celebration" },
+        { word: "Forlorn", meaning: "Sad and lonely.", synonym: "lonely" },
+        { word: "Forte", meaning: "A special strength.", synonym: "strength" },
+        { word: "Founder", meaning: "To establish something.", synonym: "establish" },
+        { word: "Fundamental", meaning: "Basic and very important.", synonym: "basic" },
+        { word: "Gruff", meaning: "Rough-sounding and unfriendly.", synonym: "rough" },
+        { word: "Gullible", meaning: "Easily tricked.", synonym: "naive" },
+        { word: "Haphazard", meaning: "Lacking order.", synonym: "random" },
+        { word: "Horrific", meaning: "Extremely frightening.", synonym: "terrifying" },
+        { word: "Hypothesis", meaning: "A suggested explanation.", synonym: "theory" },
+        { word: "Illuminate", meaning: "To light up or explain.", synonym: "light up" },
+        { word: "Immerse", meaning: "To involve deeply.", synonym: "submerge" },
+        { word: "Imperturbable", meaning: "Remaining calm.", synonym: "calm" },
+        { word: "Improvise", meaning: "To create without preparation.", synonym: "adapt" },
+        { word: "Incomprehensible", meaning: "Impossible to understand.", synonym: "baffling" },
+        { word: "Inhibit", meaning: "To prevent or slow.", synonym: "restrain" },
+        { word: "Instantaneous", meaning: "Happening immediately.", synonym: "immediate" },
+        { word: "Interminable", meaning: "Seeming endless.", synonym: "endless" },
+        { word: "Legacy", meaning: "Something passed down.", synonym: "inheritance" },
+        { word: "Maim", meaning: "To injure badly.", synonym: "injure" },
+        { word: "Malicious", meaning: "Intending to harm.", synonym: "spiteful" },
+        { word: "Malignant", meaning: "Very harmful.", synonym: "harmful" },
+        { word: "Mandatory", meaning: "Required by rules.", synonym: "required" },
+        { word: "Mar", meaning: "To damage.", synonym: "damage" },
+        { word: "Marginal", meaning: "Small in importance.", synonym: "minor" },
+        { word: "Meander", meaning: "To wander aimlessly.", synonym: "wander" },
+        { word: "Menagerie", meaning: "A collection of animals.", synonym: "collection" },
+        { word: "Morbid", meaning: "Focused on death.", synonym: "grim" },
+        { word: "Morose", meaning: "Gloomy and unhappy.", synonym: "sullen" },
+        { word: "Murky", meaning: "Dark or unclear.", synonym: "dark" },
+        { word: "Nonchalant", meaning: "Calm and unconcerned.", synonym: "casual" },
+        { word: "Nostalgia", meaning: "Longing for the past.", synonym: "longing" },
+        { word: "Obliterate", meaning: "To destroy completely.", synonym: "destroy" },
+        { word: "Opaque", meaning: "Not clear.", synonym: "cloudy" },
+        { word: "Opulent", meaning: "Rich and luxurious.", synonym: "luxurious" },
+        { word: "Ornate", meaning: "Highly decorated.", synonym: "decorated" },
+        { word: "Painstaking", meaning: "Done with great care.", synonym: "careful" },
+        { word: "Peerless", meaning: "Better than all others.", synonym: "unmatched" },
+        { word: "Perceptive", meaning: "Quick to notice.", synonym: "insightful" },
+        { word: "Precipitation", meaning: "Rain or snow.", synonym: "rainfall" },
+        { word: "Prodigal", meaning: "Wasteful.", synonym: "wasteful" },
+        { word: "Prudent", meaning: "Careful and wise.", synonym: "wise" },
+        { word: "Rejuvenate", meaning: "To make feel new again.", synonym: "revive" },
+        { word: "Replenish", meaning: "To fill up again.", synonym: "refill" },
+        { word: "Repudiate", meaning: "To reject.", synonym: "reject" },
+        { word: "Respective", meaning: "Belonging separately.", synonym: "corresponding" },
+        { word: "Ruse", meaning: "A trick.", synonym: "trick" },
+        { word: "Sanctuary", meaning: "A safe place.", synonym: "refuge" },
+        { word: "Savory", meaning: "Pleasantly flavoured.", synonym: "tasty" },
+        { word: "Scoff", meaning: "To mock.", synonym: "mock" },
+        { word: "Solicitude", meaning: "Care and concern.", synonym: "care" },
+        { word: "Specter", meaning: "A ghost or frightening idea.", synonym: "ghost" },
+        { word: "Squabble", meaning: "A small argument.", synonym: "quarrel" },
+        { word: "Torrid", meaning: "Very hot.", synonym: "scorching" },
+        { word: "Tranquil", meaning: "Calm and peaceful.", synonym: "peaceful" },
+        { word: "Valiant", meaning: "Brave.", synonym: "brave" },
+        { word: "Vanguard", meaning: "The leading group.", synonym: "forefront" },
+        { word: "Venomous", meaning: "Poisonous.", synonym: "poisonous" },
+        { word: "Vulnerable", meaning: "Easily harmed.", synonym: "defenceless" },
+        { word: "Wince", meaning: "To flinch in pain.", synonym: "flinch" }
+    ];
+
+    let sessionPool = [];
+    let currentItem = {};
+    let isWordMode = true;
+    let score = 0;
+    let timeLeft;
+    let timerInterval;
+
+    function initPage() {
+        const start = parseInt(localStorage.getItem('startWord')) || 1;
+        const end = parseInt(localStorage.getItem('endWord')) || 100;
+        const savedTime = parseInt(localStorage.getItem('sessionTime')) || 0;
+        
+        sessionPool = fullWordBank.slice(start - 1, end);
+        
+        if (savedTime > 0) {
+            timeLeft = savedTime;
+            startTimer();
+        } else {
+            document.getElementById('timerDisplay').innerText = "∞";
+        }
+
+        nextQuestion();
+    }
+
+    function startTimer() {
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                endSession();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        document.getElementById('timerDisplay').innerText = 
+            `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    function nextQuestion() {
+        if (sessionPool.length === 0) return;
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('userInput').value = "";
+        document.getElementById('userInput').focus();
+
+        currentItem = sessionPool[Math.floor(Math.random() * sessionPool.length)];
+        isWordMode = Math.random() > 0.5;
+
+        const header = document.getElementById('modeHeader');
+        const clue = document.getElementById('clueLine');
+        const prompt = document.getElementById('promptText');
+
+        if (isWordMode) {
+            header.innerText = "WORD";
+            header.style.color = "var(--word-color)";
+            clue.innerText = `Synonym: ${currentItem.synonym}`;
+            prompt.innerText = "Spell the word:";
+        } else {
+            header.innerText = "SYNONYM";
+            header.style.color = "var(--syn-color)";
+            clue.innerText = `Word: ${currentItem.word}`;
+            prompt.innerText = "What's the spelling of the synonym?";
+        }
+
+        document.getElementById('meaningLine').innerText = `"${currentItem.meaning}"`;
+    }
+
+    function checkAnswer() {
+        if (timeLeft <= 0 && localStorage.getItem('sessionTime') != "0") return;
+
+        const userValue = document.getElementById('userInput').value.trim().toLowerCase();
+        const targetValue = isWordMode ? currentItem.word.toLowerCase() : currentItem.synonym.toLowerCase();
+        const feedback = document.getElementById('feedback');
+        const main = document.getElementById('mainBody');
+
+        if (userValue === targetValue) {
+            feedback.innerText = "✓ Correct!";
+            feedback.style.color = "var(--success)";
+            score++;
+            document.getElementById('scoreDisplay').innerText = `Mastered: ${score}`;
+            setTimeout(nextQuestion, 1000);
+        } else {
+            feedback.innerText = "✗ Try again!";
+            feedback.style.color = "var(--error)";
+            main.classList.add('shake-effect');
+            setTimeout(() => main.classList.remove('shake-effect'), 500);
+        }
+    }
+
+    function endSession() {
+        document.getElementById('userInput').disabled = true;
+        document.getElementById('userInput').placeholder = "TIME'S UP!";
+        document.getElementById('feedback').innerHTML = `<h2 style="color: var(--primary)">Final Score: ${score}</h2><p>Great effort!</p>`;
+    }
+
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkAnswer();
+    });
+
+    initPage();
+</script>
+
+</body>
+</html>
