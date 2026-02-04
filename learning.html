@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 8 Vocabulary Master</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 3rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .search-section {
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            padding: 1.5rem;
+            z-index: 100;
+            text-align: center;
+        }
+
+        #wordSearch {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px 25px;
+            border-radius: 30px;
+            border: 2px solid #ddd;
+            font-size: 1.1rem;
+            transition: border-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        #wordSearch:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border-bottom: 4px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            border-bottom-color: var(--accent);
+        }
+
+        .word-title {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+            font-size: 1.4rem;
+        }
+
+        .definition {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .synonyms-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .synonym-tag {
+            background: #eef2f7;
+            color: #444;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        .stats {
+            margin-top: 10px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Year 8 Vocabulary Deck</h1>
+    <p>100 High-Level Words to Transform Your Writing</p>
+    <div id="counter" class="stats">Showing 100 words</div>
+</header>
+
+<div class="search-section">
+    <input type="text" id="wordSearch" placeholder="Search for a word or synonym..." onkeyup="renderWords()">
+</div>
+
+<div class="container">
+    <div class="word-grid" id="wordGrid"></div>
+</div>
+
+<script>
+    const vocabList = [
+        { w: "Abundant", d: "Present in large amounts.", s: ["plentiful", "ample"] },
+        { w: "Adjacent", d: "Next to or very near.", s: ["nearby", "neighbouring"] },
+        { w: "Administer", d: "To give out or manage.", s: ["manage", "give"] },
+        { w: "Agile", d: "Able to move quickly and easily.", s: ["nimble", "quick"] },
+        { w: "Alleviate", d: "To make something less severe.", s: ["ease", "relieve"] },
+        { w: "Ambulatory", d: "Able to walk.", s: ["walking", "mobile"] },
+        { w: "Animosity", d: "Strong dislike or anger.", s: ["hostility", "resentment"] },
+        { w: "Arbitrary", d: "Based on random choice.", s: ["random", "unreasonable"] },
+        { w: "Archaic", d: "Very old-fashioned.", s: ["ancient", "outdated"] },
+        { w: "Ardent", d: "Showing strong enthusiasm.", s: ["passionate", "enthusiastic"] },
+        { w: "Ascend", d: "To go up.", s: ["rise", "climb"] },
+        { w: "Assail", d: "To attack or criticise strongly.", s: ["attack", "criticise"] },
+        { w: "Astute", d: "Quick to understand.", s: ["shrewd", "clever"] },
+        { w: "Aversion", d: "A strong dislike.", s: ["dislike", "hatred"] },
+        { w: "Badger", d: "To repeatedly bother someone.", s: ["pester", "nag"] },
+        { w: "Buff", d: "To polish until shiny.", s: ["polish", "shine"] },
+        { w: "Cavalier", d: "Showing little concern.", s: ["careless", "dismissive"] },
+        { w: "Clairvoyance", d: "Ability to know things beyond normal senses.", s: ["foresight", "intuition"] },
+        { w: "Clemency", d: "Mercy shown to someone.", s: ["mercy", "leniency"] },
+        { w: "Contemporary", d: "Belonging to the present time.", s: ["modern", "current"] },
+        { w: "Cope", d: "To deal successfully with something.", s: ["manage", "handle"] },
+        { w: "Debris", d: "Scattered pieces of waste.", s: ["rubble", "wreckage"] },
+        { w: "Delirious", d: "Confused and excited.", s: ["confused", "frenzied"] },
+        { w: "Dexterity", d: "Skill, especially with hands.", s: ["skill", "agility"] },
+        { w: "Diatribe", d: "A long angry speech.", s: ["rant", "tirade"] },
+        { w: "Didactic", d: "Intended to teach.", s: ["instructive", "preachy"] },
+        { w: "Dimension", d: "A measurement or aspect.", s: ["aspect", "measurement"] },
+        { w: "Disdain", d: "The feeling that something is unworthy.", s: ["contempt", "scorn"] },
+        { w: "Disencumber", d: "To free from a burden.", s: ["free", "unburden"] },
+        { w: "Distraught", d: "Extremely upset.", s: ["distressed", "upset"] },
+        { w: "Ebb", d: "To gradually lessen.", s: ["decline", "fade"] },
+        { w: "Elusive", d: "Difficult to catch or understand.", s: ["evasive", "tricky"] },
+        { w: "Embellish", d: "To add details to decorate.", s: ["decorate", "exaggerate"] },
+        { w: "Energetic", d: "Full of energy.", s: ["lively", "vigorous"] },
+        { w: "Epic", d: "Very impressive or large.", s: ["grand", "legendary"] },
+        { w: "Ergonomic", d: "Designed for comfort.", s: ["comfortable", "user-friendly"] },
+        { w: "Euphemism", d: "A mild word used instead of a harsh one.", s: ["substitute", "mild term"] },
+        { w: "Evident", d: "Clear and obvious.", s: ["obvious", "clear"] },
+        { w: "Exhibit", d: "To show publicly.", s: ["display", "show"] },
+        { w: "Extol", d: "To praise highly.", s: ["praise", "applaud"] },
+        { w: "Fanfare", d: "A noisy celebration.", s: ["celebration", "flourish"] },
+        { w: "Forlorn", d: "Sad and lonely.", s: ["lonely", "desolate"] },
+        { w: "Forte", d: "A special strength.", s: ["strength", "talent"] },
+        { w: "Founder", d: "To establish something.", s: ["establish", "create"] },
+        { w: "Fundamental", d: "Basic and very important.", s: ["basic", "essential"] },
+        { w: "Gruff", d: "Rough-sounding and unfriendly.", s: ["rough", "blunt"] },
+        { w: "Gullible", d: "Easily tricked.", s: ["naive", "trusting"] },
+        { w: "Haphazard", d: "Lacking order.", s: ["random", "careless"] },
+        { w: "Horrific", d: "Extremely frightening.", s: ["terrifying", "dreadful"] },
+        { w: "Hypothesis", d: "A suggested explanation.", s: ["theory", "idea"] },
+        { w: "Illuminate", d: "To light up or explain.", s: ["light up", "clarify"] },
+        { w: "Immerse", d: "To involve deeply.", s: ["submerge", "involve"] },
+        { w: "Imperturbable", d: "Remaining calm.", s: ["calm", "steady"] },
+        { w: "Improvise", d: "To create without preparation.", s: ["adapt", "invent"] },
+        { w: "Incomprehensible", d: "Impossible to understand.", s: ["baffling", "unclear"] },
+        { w: "Inhibit", d: "To prevent or slow.", s: ["restrain", "prevent"] },
+        { w: "Instantaneous", d: "Happening immediately.", s: ["immediate", "sudden"] },
+        { w: "Interminable", d: "Seeming endless.", s: ["endless", "prolonged"] },
+        { w: "Legacy", d: "Something passed down.", s: ["inheritance", "tradition"] },
+        { w: "Maim", d: "To injure badly.", s: ["injure", "cripple"] },
+        { w: "Malicious", d: "Intending to harm.", s: ["spiteful", "cruel"] },
+        { w: "Malignant", d: "Very harmful.", s: ["harmful", "dangerous"] },
+        { w: "Mandatory", d: "Required by rules.", s: ["required", "compulsory"] },
+        { w: "Mar", d: "To damage.", s: ["damage", "spoil"] },
+        { w: "Marginal", d: "Small in importance.", s: ["minor", "slight"] },
+        { w: "Meander", d: "To wander aimlessly.", s: ["wander", "ramble"] },
+        { w: "Menagerie", d: "A collection of animals.", s: ["collection", "assortment"] },
+        { w: "Morbid", d: "Focused on death.", s: ["grim", "gloomy"] },
+        { w: "Morose", d: "Gloomy and unhappy.", s: ["sullen", "gloomy"] },
+        { w: "Murky", d: "Dark or unclear.", s: ["dark", "unclear"] },
+        { w: "Nonchalant", d: "Calm and unconcerned.", s: ["casual", "unconcerned"] },
+        { w: "Nostalgia", d: "Longing for the past.", s: ["longing", "homesickness"] },
+        { w: "Obliterate", d: "To destroy completely.", s: ["destroy", "erase"] },
+        { w: "Opaque", d: "Not clear.", s: ["cloudy", "unclear"] },
+        { w: "Opulent", d: "Rich and luxurious.", s: ["luxurious", "lavish"] },
+        { w: "Ornate", d: "Highly decorated.", s: ["decorated", "elaborate"] },
+        { w: "Painstaking", d: "Done with great care.", s: ["careful", "thorough"] },
+        { w: "Peerless", d: "Better than all others.", s: ["unmatched", "unequalled"] },
+        { w: "Perceptive", d: "Quick to notice.", s: ["insightful", "observant"] },
+        { w: "Precipitation", d: "Rain or snow.", s: ["rainfall", "moisture"] },
+        { w: "Prodigal", d: "Wasteful.", s: ["wasteful", "extravagant"] },
+        { w: "Prudent", d: "Careful and wise.", s: ["wise", "cautious"] },
+        { w: "Rejuvenate", d: "To make feel new again.", s: ["revive", "refresh"] },
+        { w: "Replenish", d: "To fill up again.", s: ["refill", "restore"] },
+        { w: "Repudiate", d: "To reject.", s: ["reject", "deny"] },
+        { w: "Respective", d: "Belonging separately.", s: ["corresponding", "individual"] },
+        { w: "Ruse", d: "A trick.", s: ["trick", "ploy"] },
+        { w: "Sanctuary", d: "A safe place.", s: ["refuge", "shelter"] },
+        { w: "Savory", d: "Pleasantly flavoured.", s: ["tasty", "flavourful"] },
+        { w: "Scoff", d: "To mock.", s: ["mock", "jeer"] },
+        { w: "Solicitude", d: "Care and concern.", s: ["care", "concern"] },
+        { w: "Specter", d: "A ghost or frightening idea.", s: ["ghost", "shadow"] },
+        { w: "Squabble", d: "A small argument.", s: ["quarrel", "argument"] },
+        { w: "Torrid", d: "Very hot.", s: ["scorching", "sweltering"] },
+        { w: "Tranquil", d: "Calm and peaceful.", s: ["peaceful", "calm"] },
+        { w: "Valiant", d: "Brave.", s: ["brave", "courageous"] },
+        { w: "Vanguard", d: "The leading group.", s: ["forefront", "frontline"] },
+        { w: "Venomous", d: "Poisonous.", s: ["poisonous", "spiteful"] },
+        { w: "Vulnerable", d: "Easily harmed.", s: ["defenceless", "exposed"] },
+        { w: "Wince", d: "To flinch in pain.", s: ["flinch", "recoil"] }
+    ];
+
+    function renderWords() {
+        const searchTerm = document.getElementById('wordSearch').value.toLowerCase();
+        const grid = document.getElementById('wordGrid');
+        const counter = document.getElementById('counter');
+        grid.innerHTML = '';
+
+        const filtered = vocabList.filter(item => 
+            item.w.toLowerCase().includes(searchTerm) || 
+            item.d.toLowerCase().includes(searchTerm) ||
+            item.s.some(syn => syn.toLowerCase().includes(searchTerm))
+        );
+
+        filtered.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <h3 class="word-title">${item.w}</h3>
+                <p class="definition">${item.d}</p>
+                <div class="synonyms-container">
+                    ${item.s.map(syn => `<span class="synonym-tag">${syn}</span>`).join('')}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        counter.innerText = `Showing ${filtered.length} words`;
+    }
+
+    // Initial render
+    renderWords();
+</script>
+
+</body>
+</html>
