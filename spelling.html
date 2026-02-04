@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 8 Vocab Pro: Mastery Suite</title>
+    <style>
+        :root {
+            --primary: #1a2a6c;
+            --accent: #f39c12;
+            --success: #27ae60;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        /* --- Navigation & Controls --- */
+        nav {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-quiz { background: var(--accent); color: white; }
+        .btn-shuffle { background: var(--primary); color: white; }
+        button:hover { opacity: 0.9; transform: scale(1.05); }
+
+        /* --- Header --- */
+        header {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            padding: 4rem 1rem;
+            text-align: center;
+        }
+
+        .search-box {
+            margin-top: -25px;
+            text-align: center;
+        }
+
+        #wordSearch {
+            width: 90%;
+            max-width: 500px;
+            padding: 15px 25px;
+            border-radius: 50px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 1.1rem;
+        }
+
+        /* --- Grid & Cards --- */
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid #e1e4e8;
+            overflow: hidden;
+        }
+
+        .card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+
+        .word-text { font-size: 1.5rem; color: var(--primary); margin: 0 0 10px 0; }
+        
+        /* Flashcard Feature */
+        .definition { 
+            color: #555; 
+            line-height: 1.4; 
+            transition: opacity 0.3s;
+        }
+
+        .hidden-def { opacity: 0; filter: blur(5px); }
+        .reveal-hint { font-size: 0.8rem; color: #aaa; margin-top: 10px; display: none; }
+        .quiz-mode .reveal-hint { display: block; }
+
+        .tag-box { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 15px; }
+        .tag { background: #f0f2f5; color: #666; padding: 3px 10px; border-radius: 10px; font-size: 0.8rem; }
+
+        .stats-bar { text-align: center; margin: 20px 0; font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="index.html" class="back-btn">← Home</a>
+    <div class="controls">
+        <button class="btn-shuffle" onclick="shuffleWords()">🔀 Shuffle</button>
+        <button class="btn-quiz" id="quizToggle" onclick="toggleQuizMode()">🧠 Start Quiz Mode</button>
+    </div>
+</nav>
+
+<header>
+    <h1>Vocabulary Mastery</h1>
+    <p>100 Powerful Words for Year 8 Excellence</p>
+</header>
+
+<div class="search-box">
+    <input type="text" id="wordSearch" placeholder="Find a word or synonym..." onkeyup="render()">
+</div>
+
+<div class="container">
+    <div id="stats" class="stats-bar"></div>
+    <div class="word-grid" id="grid"></div>
+</div>
+
+<script>
+    let isQuizMode = false;
+    let vocab = [
+        { w: "Abundant", d: "Present in large amounts.", s: ["plentiful", "ample"] },
+        { w: "Adjacent", d: "Next to or very near.", s: ["nearby", "neighbouring"] },
+        { w: "Administer", d: "To give out or manage.", s: ["manage", "give"] },
+        { w: "Agile", d: "Able to move quickly and easily.", s: ["nimble", "quick"] },
+        { w: "Alleviate", d: "To make something less severe.", s: ["ease", "relieve"] },
+        { w: "Ambulatory", d: "Able to walk.", s: ["walking", "mobile"] },
+        { w: "Animosity", d: "Strong dislike or anger.", s: ["hostility", "resentment"] },
+        { w: "Arbitrary", d: "Based on random choice.", s: ["random", "unreasonable"] },
+        { w: "Archaic", d: "Very old-fashioned.", s: ["ancient", "outdated"] },
+        { w: "Ardent", d: "Showing strong enthusiasm.", s: ["passionate", "enthusiastic"] },
+        { w: "Ascend", d: "To go up.", s: ["rise", "climb"] },
+        { w: "Assail", d: "To attack or criticise strongly.", s: ["attack", "criticise"] },
+        { w: "Astute", d: "Quick to understand.", s: ["shrewd", "clever"] },
+        { w: "Aversion", d: "A strong dislike.", s: ["dislike", "hatred"] },
+        { w: "Badger", d: "To repeatedly bother someone.", s: ["pester", "nag"] },
+        { w: "Buff", d: "To polish until shiny.", s: ["polish", "shine"] },
+        { w: "Cavalier", d: "Showing little concern.", s: ["careless", "dismissive"] },
+        { w: "Clairvoyance", d: "Ability to know things beyond normal senses.", s: ["foresight", "intuition"] },
+        { w: "Clemency", d: "Mercy shown to someone.", s: ["mercy", "leniency"] },
+        { w: "Contemporary", d: "Belonging to the present time.", s: ["modern", "current"] },
+        { w: "Cope", d: "To deal successfully with something.", s: ["manage", "handle"] },
+        { w: "Debris", d: "Scattered pieces of waste.", s: ["rubble", "wreckage"] },
+        { w: "Delirious", d: "Confused and excited.", s: ["confused", "frenzied"] },
+        { w: "Dexterity", d: "Skill, especially with hands.", s: ["skill", "agility"] },
+        { w: "Diatribe", d: "A long angry speech.", s: ["rant", "tirade"] },
+        { w: "Didactic", d: "Intended to teach.", s: ["instructive", "preachy"] },
+        { w: "Dimension", d: "A measurement or aspect.", s: ["aspect", "measurement"] },
+        { w: "Disdain", d: "The feeling that something is unworthy.", s: ["contempt", "scorn"] },
+        { w: "Disencumber", d: "To free from a burden.", s: ["free", "unburden"] },
+        { w: "Distraught", d: "Extremely upset.", s: ["distressed", "upset"] },
+        { w: "Ebb", d: "To gradually lessen.", s: ["decline", "fade"] },
+        { w: "Elusive", d: "Difficult to catch or understand.", s: ["evasive", "tricky"] },
+        { w: "Embellish", d: "To add details to decorate.", s: ["decorate", "exaggerate"] },
+        { w: "Energetic", d: "Full of energy.", s: ["lively", "vigorous"] },
+        { w: "Epic", d: "Very impressive or large.", s: ["grand", "legendary"] },
+        { w: "Ergonomic", d: "Designed for comfort.", s: ["comfortable", "user-friendly"] },
+        { w: "Euphemism", d: "A mild word used instead of a harsh one.", s: ["substitute", "mild term"] },
+        { w: "Evident", d: "Clear and obvious.", s: ["obvious", "clear"] },
+        { w: "Exhibit", d: "To show publicly.", s: ["display", "show"] },
+        { w: "Extol", d: "To praise highly.", s: ["praise", "applaud"] },
+        { w: "Fanfare", d: "A noisy celebration.", s: ["celebration", "flourish"] },
+        { w: "Forlorn", d: "Sad and lonely.", s: ["lonely", "desolate"] },
+        { w: "Forte", d: "A special strength.", s: ["strength", "talent"] },
+        { w: "Founder", d: "To establish something.", s: ["establish", "create"] },
+        { w: "Fundamental", d: "Basic and very important.", s: ["basic", "essential"] },
+        { w: "Gruff", d: "Rough-sounding and unfriendly.", s: ["rough", "blunt"] },
+        { w: "Gullible", d: "Easily tricked.", s: ["naive", "trusting"] },
+        { w: "Haphazard", d: "Lacking order.", s: ["random", "careless"] },
+        { w: "Horrific", d: "Extremely frightening.", s: ["terrifying", "dreadful"] },
+        { w: "Hypothesis", d: "A suggested explanation.", s: ["theory", "idea"] },
+        { w: "Illuminate", d: "To light up or explain.", s: ["light up", "clarify"] },
+        { w: "Immerse", d: "To involve deeply.", s: ["submerge", "involve"] },
+        { w: "Imperturbable", d: "Remaining calm.", s: ["calm", "steady"] },
+        { w: "Improvise", d: "To create without preparation.", s: ["adapt", "invent"] },
+        { w: "Incomprehensible", d: "Impossible to understand.", s: ["baffling", "unclear"] },
+        { w: "Inhibit", d: "To prevent or slow.", s: ["restrain", "prevent"] },
+        { w: "Instantaneous", d: "Happening immediately.", s: ["immediate", "sudden"] },
+        { w: "Interminable", d: "Seeming endless.", s: ["endless", "prolonged"] },
+        { w: "Legacy", d: "Something passed down.", s: ["inheritance", "tradition"] },
+        { w: "Maim", d: "To injure badly.", s: ["injure", "cripple"] },
+        { w: "Malicious", d: "Intending to harm.", s: ["spiteful", "cruel"] },
+        { w: "Malignant", d: "Very harmful.", s: ["harmful", "dangerous"] },
+        { w: "Mandatory", d: "Required by rules.", s: ["required", "compulsory"] },
+        { w: "Mar", d: "To damage.", s: ["damage", "spoil"] },
+        { w: "Marginal", d: "Small in importance.", s: ["minor", "slight"] },
+        { w: "Meander", d: "To wander aimlessly.", s: ["wander", "ramble"] },
+        { w: "Menagerie", d: "A collection of animals.", s: ["collection", "assortment"] },
+        { w: "Morbid", d: "Focused on death.", s: ["grim", "gloomy"] },
+        { w: "Morose", d: "Gloomy and unhappy.", s: ["sullen", "gloomy"] },
+        { w: "Murky", d: "Dark or unclear.", s: ["dark", "unclear"] },
+        { w: "Nonchalant", d: "Calm and unconcerned.", s: ["casual", "unconcerned"] },
+        { w: "Nostalgia", d: "Longing for the past.", s: ["longing", "homesickness"] },
+        { w: "Obliterate", d: "To destroy completely.", s: ["destroy", "erase"] },
+        { w: "Opaque", d: "Not clear.", s: ["cloudy", "unclear"] },
+        { w: "Opulent", d: "Rich and luxurious.", s: ["luxurious", "lavish"] },
+        { w: "Ornate", d: "Highly decorated.", s: ["decorated", "elaborate"] },
+        { w: "Painstaking", d: "Done with great care.", s: ["careful", "thorough"] },
+        { w: "Peerless", d: "Better than all others.", s: ["unmatched", "unequalled"] },
+        { w: "Perceptive", d: "Quick to notice.", s: ["insightful", "observant"] },
+        { w: "Precipitation", d: "Rain or snow.", s: ["rainfall", "moisture"] },
+        { w: "Prodigal", d: "Wasteful.", s: ["wasteful", "extravagant"] },
+        { w: "Prudent", d: "Careful and wise.", s: ["wise", "cautious"] },
+        { w: "Rejuvenate", d: "To make feel new again.", s: ["revive", "refresh"] },
+        { w: "Replenish", d: "To fill up again.", s: ["refill", "restore"] },
+        { w: "Repudiate", d: "To reject.", s: ["reject", "deny"] },
+        { w: "Respective", d: "Belonging separately.", s: ["corresponding", "individual"] },
+        { w: "Ruse", d: "A trick.", s: ["trick", "ploy"] },
+        { w: "Sanctuary", d: "A safe place.", s: ["refuge", "shelter"] },
+        { w: "Savory", d: "Pleasantly flavoured.", s: ["tasty", "flavourful"] },
+        { w: "Scoff", d: "To mock.", s: ["mock", "jeer"] },
+        { w: "Solicitude", d: "Care and concern.", s: ["care", "concern"] },
+        { w: "Specter", d: "A ghost or frightening idea.", s: ["ghost", "shadow"] },
+        { w: "Squabble", d: "A small argument.", s: ["quarrel", "argument"] },
+        { w: "Torrid", d: "Very hot.", s: ["scorching", "sweltering"] },
+        { w: "Tranquil", d: "Calm and peaceful.", s: ["peaceful", "calm"] },
+        { w: "Valiant", d: "Brave.", s: ["brave", "courageous"] },
+        { w: "Vanguard", d: "The leading group.", s: ["forefront", "frontline"] },
+        { w: "Venomous", d: "Poisonous.", s: ["poisonous", "spiteful"] },
+        { w: "Vulnerable", d: "Easily harmed.", s: ["defenceless", "exposed"] },
+        { w: "Wince", d: "To flinch in pain.", s: ["flinch", "recoil"] }
+    ];
+
+    function render() {
+        const query = document.getElementById('wordSearch').value.toLowerCase();
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+
+        const filtered = vocab.filter(x => 
+            x.w.toLowerCase().includes(query) || 
+            x.s.some(s => s.toLowerCase().includes(query))
+        );
+
+        document.getElementById('stats').innerText = `Displaying ${filtered.length} of 100 Mastery Words`;
+
+        filtered.forEach(item => {
+            const el = document.createElement('div');
+            el.className = `card ${isQuizMode ? 'quiz-mode' : ''}`;
+            el.onclick = function() { 
+                const d = this.querySelector('.definition');
+                d.classList.remove('hidden-def');
+            };
+            
+            el.innerHTML = `
+                <h3 class="word-text">${item.w}</h3>
+                <p class="definition ${isQuizMode ? 'hidden-def' : ''}">${item.d}</p>
+                <div class="reveal-hint">Click card to reveal definition</div>
+                <div class="tag-box">
+                    ${item.s.map(s => `<span class="tag">${s}</span>`).join('')}
+                </div>
+            `;
+            grid.appendChild(el);
+        });
+    }
+
+    function toggleQuizMode() {
+        isQuizMode = !isQuizMode;
+        const btn = document.getElementById('quizToggle');
+        btn.innerText = isQuizMode ? "👀 Stop Quiz Mode" : "🧠 Start Quiz Mode";
+        btn.style.background = isQuizMode ? "#27ae60" : "#f39c12";
+        render();
+    }
+
+    function shuffleWords() {
+        vocab.sort(() => Math.random() - 0.5);
+        render();
+    }
+
+    render();
+</script>
+
+</body>
+</html>
