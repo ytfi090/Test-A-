@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 8 Flip-Quiz</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e67e22;
+            --success: #27ae60;
+            --error: #e74c3c;
+            --bg: #f4f7f6;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; text-align: center; }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        .shake-effect { animation: shake 0.5s ease; }
+
+        nav { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .home-btn { text-decoration: none; color: var(--primary); font-weight: bold; border: 2px solid var(--primary); padding: 8px 15px; border-radius: 5px; }
+
+        .quiz-container { max-width: 600px; margin: 40px auto; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+
+        .mode-tag { font-size: 0.8rem; font-weight: bold; padding: 6px 15px; border-radius: 20px; background: #ebf5ff; color: #3498db; display: inline-block; margin-bottom: 20px; text-transform: uppercase; }
+        .target-display { font-size: 3rem; font-weight: 900; margin: 10px 0; color: var(--primary); letter-spacing: -1px; }
+        .meaning-box { font-style: italic; color: #555; margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 12px; border-left: 4px solid #ddd; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .option-btn { 
+            padding: 22px; font-size: 1.2rem; font-weight: 600; border: 2px solid #edf2f7; 
+            border-radius: 16px; cursor: pointer; background: white; transition: 0.2s; 
+        }
+        .option-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+        .btn-correct { background: var(--success) !important; color: white; border-color: var(--success) !important; }
+        .btn-wrong { background: var(--error) !important; color: white; border-color: var(--error) !important; }
+
+        #scoreBoard { font-weight: 900; color: var(--primary); }
+    </style>
+</head>
+<body id="mainBody">
+
+<nav>
+    <a href="index.html" class="home-btn">🏠 Home</a>
+    <div id="scoreBoard">Mastered: 0</div>
+    <div id="timerDisplay" style="font-weight: bold; font-family: monospace; font-size: 1.2rem;">--:--</div>
+</nav>
+
+<div class="quiz-container">
+    <div id="modeTag" class="mode-tag">Loading...</div>
+    <div class="target-display" id="targetMain">---</div>
+    <div class="meaning-box" id="targetMeaning">---</div>
+
+    <div class="options-grid" id="optionsContainer"></div>
+    
+    <div id="feedback" style="margin-top: 25px; font-weight: bold; height: 20px;"></div>
+</div>
+
+<script>
+    const fullWordBank = [
+        {w:"Abundant",m:"Present in large amounts.",s:"plentiful"},{w:"Adjacent",m:"Next to or very near.",s:"nearby"},{w:"Administer",m:"To give out or manage.",s:"manage"},{w:"Agile",m:"Able to move quickly and easily.",s:"nimble"},{w:"Alleviate",m:"To make something less severe.",s:"ease"},
+        {w:"Ambulatory",m:"Able to walk.",s:"walking"},{w:"Animosity",m:"Strong dislike or anger.",s:"hostility"},{w:"Arbitrary",m:"Based on random choice.",s:"random"},{w:"Archaic",m:"Very old-fashioned.",s:"ancient"},{w:"Ardent",m:"Showing strong enthusiasm.",s:"passionate"},
+        {w:"Ascend",m:"To go up.",s:"rise"},{w:"Assail",m:"To attack or criticise strongly.",s:"attack"},{w:"Astute",m:"Quick to understand.",s:"shrewd"},{w:"Aversion",m:"A strong dislike.",s:"dislike"},{w:"Badger",m:"To repeatedly bother someone.",s:"pester"},
+        {w:"Buff",m:"To polish until shiny.",s:"polish"},{w:"Cavalier",m:"Showing little concern.",s:"careless"},{w:"Clairvoyance",m:"Ability to know things beyond normal senses.",s:"foresight"},{w:"Clemency",m:"Mercy shown to someone.",s:"mercy"},{w:"Contemporary",m:"Belonging to the present time.",s:"modern"},
+        {w:"Cope",m:"To deal successfully with something.",s:"handle"},{w:"Debris",m:"Scattered pieces of waste.",s:"rubble"},{w:"Delirious",m:"Confused and excited.",s:"confused"},{w:"Dexterity",m:"Skill, especially with hands.",s:"skill"},{w:"Diatribe",m:"A long angry speech.",s:"rant"},
+        {w:"Didactic",m:"Intended to teach.",s:"instructive"},{w:"Dimension",m:"A measurement or aspect.",s:"aspect"},{w:"Disdain",m:"The feeling that something is unworthy.",s:"contempt"},{w:"Disencumber",m:"To free from a burden.",s:"free"},{w:"Distraught",m:"Extremely upset.",s:"distressed"},
+        {w:"Ebb",m:"To gradually lessen.",s:"decline"},{w:"Elusive",m:"Difficult to catch or understand.",s:"evasive"},{w:"Embellish",m:"To add details to decorate.",s:"decorate"},{w:"Energetic",m:"Full of energy.",s:"lively"},{w:"Epic",m:"Very impressive or large.",s:"grand"},
+        {w:"Ergonomic",m:"Designed for comfort.",s:"comfortable"},{w:"Euphemism",m:"A mild word used instead of a harsh one.",s:"substitute"},{w:"Evident",m:"Clear and obvious.",s:"obvious"},{w:"Exhibit",m:"To show publicly.",s:"display"},{w:"Extol",m:"To praise highly.",s:"praise"},
+        {w:"Fanfare",m:"A noisy celebration.",s:"celebration"},{w:"Forlorn",m:"Sad and lonely.",s:"lonely"},{w:"Forte",m:"A special strength.",s:"strength"},{w:"Founder",m:"To establish something.",s:"establish"},{w:"Fundamental",m:"Basic and very important.",s:"basic"},
+        {w:"Gruff",m:"Rough-sounding and unfriendly.",s:"rough"},{w:"Gullible",m:"Easily tricked.",s:"naive"},{w:"Haphazard",m:"Lacking order.",s:"random"},{w:"Horrific",m:"Extremely frightening.",s:"terrifying"},{w:"Hypothesis",m:"A suggested explanation.",s:"theory"},
+        {w:"Illuminate",m:"To light up or explain.",s:"clarify"},{w:"Immerse",m:"To involve deeply.",s:"submerge"},{w:"Imperturbable",m:"Remaining calm.",s:"calm"},{w:"Improvise",m:"To create without preparation.",s:"adapt"},{w:"Incomprehensible",m:"Impossible to understand.",s:"baffling"},
+        {w:"Inhibit",m:"To prevent or slow.",s:"restrain"},{w:"Instantaneous",m:"Happening immediately.",s:"immediate"},{w:"Interminable",m:"Seeming endless.",s:"endless"},{w:"Legacy",m:"Something passed down.",s:"inheritance"},{w:"Maim",m:"To injure badly.",s:"injure"},
+        {w:"Malicious",m:"Intending to harm.",s:"spiteful"},{w:"Malignant",m:"Very harmful.",s:"harmful"},{w:"Mandatory",m:"Required by rules.",s:"required"},{w:"Mar",m:"To damage.",s:"damage"},{w:"Marginal",m:"Small in importance.",s:"minor"},
+        {w:"Meander",m:"To wander aimlessly.",s:"wander"},{w:"Menagerie",m:"A collection of animals.",s:"collection"},{w:"Morbid",m:"Focused on death.",s:"grim"},{w:"Morose",m:"Gloomy and unhappy.",s:"sullen"},{w:"Murky",m:"Dark or unclear.",s:"dark"},
+        {w:"Nonchalant",m:"Calm and unconcerned.",s:"casual"},{w:"Nostalgia",m:"Longing for the past.",s:"longing"},{w:"Obliterate",m:"To destroy completely.",s:"destroy"},{w:"Opaque",m:"Not clear.",s:"cloudy"},{w:"Opulent",m:"Rich and luxurious.",s:"luxurious"},
+        {w:"Ornate",m:"Highly decorated.",s:"elaborate"},{w:"Painstaking",m:"Done with great care.",s:"thorough"},{w:"Peerless",m:"Better than all others.",s:"unmatched"},{w:"Perceptive",m:"Quick to notice.",s:"insightful"},{w:"Precipitation",m:"Rain or snow.",s:"rainfall"},
+        {w:"Prodigal",m:"Wasteful.",s:"wasteful"},{w:"Prudent",m:"Careful and wise.",s:"wise"},{w:"Rejuvenate",m:"To make feel new again.",s:"revive"},{w:"Replenish",m:"To fill up again.",s:"refill"},{w:"Repudiate",m:"To reject.",s:"reject"},
+        {w:"Respective",m:"Belonging separately.",s:"corresponding"},{w:"Ruse",m:"A trick.",s:"trick"},{w:"Sanctuary",m:"A safe place.",s:"refuge"},{w:"Savory",m:"Pleasantly flavoured.",s:"tasty"},{w:"Scoff",m:"To mock.",s:"mock"},
+        {w:"Solicitude",m:"Care and concern.",s:"care"},{w:"Specter",m:"A ghost or frightening idea.",s:"ghost"},{w:"Squabble",m:"A small argument.",s:"quarrel"},{w:"Torrid",m:"Very hot.",s:"scorching"},{w:"Tranquil",m:"Calm and peaceful.",s:"peaceful"},
+        {w:"Valiant",m:"Brave.",s:"brave"},{w:"Vanguard",m:"The leading group.",s:"forefront"},{w:"Venomous",m:"Poisonous.",s:"poisonous"},{w:"Vulnerable",m:"Easily harmed.",s:"defenceless"},{w:"Wince",m:"To flinch in pain.",s:"flinch"}
+    ];
+
+    let sessionPool = [];
+    let score = 0;
+    let currentItem = {};
+    let isFindingSynonym = true;
+
+    function initQuiz() {
+        const start = parseInt(localStorage.getItem('startWord')) || 1;
+        const end = parseInt(localStorage.getItem('endWord')) || 100;
+        sessionPool = fullWordBank.slice(start - 1, end);
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        document.getElementById('feedback').innerText = "";
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = "";
+
+        isFindingSynonym = Math.random() > 0.5;
+        currentItem = sessionPool[Math.floor(Math.random() * sessionPool.length)];
+        
+        const modeTag = document.getElementById('modeTag');
+        const targetMain = document.getElementById('targetMain');
+        const targetMeaning = document.getElementById('targetMeaning');
+
+        if (isFindingSynonym) {
+            modeTag.innerText = "Target Word";
+            targetMain.innerText = currentItem.w;
+        } else {
+            modeTag.innerText = "Target Synonym";
+            targetMain.innerText = currentItem.s;
+        }
+        targetMeaning.innerText = `"${currentItem.m}"`;
+
+        let correctAnswer = isFindingSynonym ? currentItem.s : currentItem.w;
+        let options = [correctAnswer];
+
+        while (options.length < 4) {
+            let rand = fullWordBank[Math.floor(Math.random() * fullWordBank.length)];
+            let wrong = isFindingSynonym ? rand.s : rand.w;
+            if (!options.includes(wrong)) options.push(wrong);
+        }
+
+        options.sort(() => Math.random() - 0.5).forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                if(opt === correctAnswer) {
+                    btn.classList.add('btn-correct');
+                    score++;
+                    document.getElementById('scoreBoard').innerText = `Mastered: ${score}`;
+                    setTimeout(loadQuestion, 1000);
+                } else {
+                    btn.classList.add('btn-wrong');
+                    document.getElementById('mainBody').classList.add('shake-effect');
+                    document.querySelectorAll('.option-btn').forEach(b => {
+                        if(b.innerText === correctAnswer) b.classList.add('btn-correct');
+                    });
+                    setTimeout(() => {
+                        document.getElementById('mainBody').classList.remove('shake-effect');
+                        loadQuestion();
+                    }, 2000);
+                }
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    initQuiz();
+</script>
+</body>
+</html>
